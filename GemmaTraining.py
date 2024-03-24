@@ -34,7 +34,6 @@ hf_token = "ENTER YOUR HUGGINGFACE TOKEN"
 
 from huggingface_hub import login
 login(token = hf_token)
-# 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
 
 model_id = "google/gemma-2b-it"
 model_id = "merged_model_curricular"
