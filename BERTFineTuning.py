@@ -28,6 +28,8 @@ from tqdm.auto import tqdm
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # SET data_path TO FINETUNING DATASET
 data_path = "PATH TO DATA"
+# SET base_dir TO PRE TRAINED MODEL PATH
+base_dir = 'PATH TO PRE TRAINED MODEL'
 # SET you HF TOKEN TO PUSH MODEL TO HUB
 hf_token = "ENTER YOUR HUGGINGFACE TOKEN"
 
@@ -207,7 +209,6 @@ def process_and_evaluate(
 good_cols = ['Anxiety', 'Depression']
 
 arr = []
-base_dir = 'PATH TO FINE TUNED MODEL'
 tokenizer_dir = 'bert-base-uncased'
 print('-'*100)
 for col in good_cols:
