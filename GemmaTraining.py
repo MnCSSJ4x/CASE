@@ -9,7 +9,7 @@ from datasets import Dataset
 from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training, get_peft_model
 import bitsandbytes as bnb
 from trl import SFTTrainer
-
+from huggingface_hub import login
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -20,23 +20,19 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype=torch.bfloat16
 )
 
-
+# SET pre_training TO False FOR FINE-TUNING
 pre_training = True
+# SET data_path TO YOUR DATASET FILE (csv)
 data_path = "PATH TO DATA"
+# ENTER YOUR HUGGINFACE TOKEN TO PUSH THE MODEL TO HF HUB AND ACCESS GEMMA
 hf_token = "ENTER YOUR HUGGINGFACE TOKEN"
-# Now we specify the model ID and then we load it with our previously defined quantization configuration.Now we specify the model ID and then we load it with our previously defined quantization configuration.
 
-# if you are using google colab
-
-# import os
-# from google.colab import userdata
-# os.environ["HF_TOKEN"] = userdata.get('HF_TOKEN')
-
-from huggingface_hub import login
 login(token = hf_token)
 
-model_id = "google/gemma-2b-it"
-model_id = "merged_model_curricular"
+if pre_training:
+    model_id = "google/gemma-2b-it"
+else:
+    model_id = "merged_model_curricular"
 
 model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=bnb_config, device_map={"":0})
 tokenizer = AutoTokenizer.from_pretrained(model_id, add_eos_token=True, padding_side='left')
@@ -89,39 +85,10 @@ else:
 data = data.shuffle(seed=1234)  # Shuffle data here
 data = data.map(lambda samples: tokenizer(samples["prompt"]), batched=True)
 
-# data = data.shuffle(seed=1234)  # Shuffle data here
-# data = data.map(lambda samples: tokenizer(samples["prompt"]), batched=True)
-
-# Split dataset into 90% for training and 10% for testing
-
 data = data.train_test_split(test_size=0.2)
 train_dataset = data["train"]
 test_dataset = data["test"]
 
-# data = data.train_test_split(test_size=0.2)
-# train_dataset = data["train"]
-# test_dataset = data["test"]
-
-# ### After Formatting, We should get something like this
-# 
-# ```json
-# {
-# "text":"<start_of_turn>user Create a function to calculate the sum of a sequence of integers. here are the inputs [1, 2, 3, 4, 5] <end_of_turn>
-# <start_of_turn>model # Python code def sum_sequence(sequence): sum = 0 for num in sequence: sum += num return sum <end_of_turn>",
-# "instruction":"Create a function to calculate the sum of a sequence of integers",
-# "input":"[1, 2, 3, 4, 5]",
-# "output":"# Python code def sum_sequence(sequence): sum = 0 for num in,
-#  sequence: sum += num return sum",
-# "prompt":"<start_of_turn>user Create a function to calculate the sum of a sequence of integers. here are the inputs [1, 2, 3, 4, 5] <end_of_turn>
-# <start_of_turn>model # Python code def sum_sequence(sequence): sum = 0 for num in sequence: sum += num return sum <end_of_turn>"
-# 
-# }
-# ```
-# 
-# While using SFT (**[Supervised Fine-tuning Trainer](https://huggingface.co/docs/trl/main/en/sft_trainer)**) for fine-tuning, we will be only passing in the “text” column of the dataset for fine-tuning.
-
-# ## Step 4 - Apply Lora  
-# Here comes the magic with peft! Let's load a PeftModel and specify that we are going to use low-rank adapters (LoRA) using get_peft_model utility function and  the prepare_model_for_kbit_training method from PEFT.
 
 model.gradient_checkpointing_enable()
 model = prepare_model_for_kbit_training(model)
@@ -140,8 +107,6 @@ def find_all_linear_names(model):
 modules = find_all_linear_names(model)
 print("Modules being trained: ", modules)
 
-# from peft import LoraConfig, get_peft_model
-
 lora_config = LoraConfig(
     r=64,
     lora_alpha=32,
@@ -152,45 +117,6 @@ lora_config = LoraConfig(
 )
 
 model = get_peft_model(model, lora_config)
-
-# trainable, total = model.get_nb_trainable_parameters()
-# print(f"Trainable: {trainable} | total: {total} | Percentage: {trainable/total*100:.4f}%")
-
-# ## Step 5 - Run the training!
-
-# Setting the training arguments:
-# * for the reason of demo, we just ran it for few steps (100) just to showcase how to use this integration with existing tools on the HF ecosystem.
-
-# import transformers
-
-# tokenizer.pad_token = tokenizer.eos_token
-
-
-# trainer = transformers.Trainer(
-#     model=model,
-#     train_dataset=train_data,
-#     eval_dataset=test_data,
-#     args=transformers.TrainingArguments(
-#         per_device_train_batch_size=1,
-#         gradient_accumulation_steps=4,
-#         warmup_steps=0.03,
-#         max_steps=100,
-#         learning_rate=2e-4,
-#         fp16=True,
-#         logging_steps=1,
-#         output_dir="outputs_mistral_b_finance_finetuned_test",
-#         optim="paged_adamw_8bit",
-#         save_strategy="epoch",
-#     ),
-#     data_collator=transformers.DataCollatorForLanguageModeling(tokenizer, mlm=False),
-# )
-
-
-# ### Fine-Tuning with qLora and Supervised Fine-Tuning
-# 
-# We're ready to fine-tune our model using qLora. For this tutorial, we'll use the `SFTTrainer` from the `trl` library for supervised fine-tuning. Ensure that you've installed the `trl` library as mentioned in the prerequisites.
-
-#new code using SFTTrainer
 
 tokenizer.pad_token = tokenizer.eos_token
 torch.cuda.empty_cache()
@@ -217,16 +143,12 @@ trainer = SFTTrainer(
     data_collator=transformers.DataCollatorForLanguageModeling(tokenizer, mlm=False),
 )
 
-# ## Lets start training
-
 torch.cuda.empty_cache()
-model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+model.config.use_cache = False
 trainer.train()
 
-#  Share adapters on the 🤗 Hub
-
 if pre_training:
-    new_model = "merged_model_curricular" #Name of the model you will be pushing to huggingface model hub
+    new_model = "merged_model_curricular"
 else:
     new_model = "merged_model_CASE"
     
@@ -256,34 +178,15 @@ else:
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
-# import pandas as pd
-
-# df = pd.read_csv("CounselChatDatasetWithPredictedDiagnosisSmall.csv").iloc[:30]
-# col_to_use = 'questionFull'
+# Generating diagnosis
 
 if not pre_training:
     df = test_dataset.to_pandas()
     col_to_use = 'TEXT'
 
-    # df['questionFull']
-
-    # df = pd.read_csv("./test_data.csv", delimiter='|')
-    # prompt_column = [generate_prompt_diagnosis(row) for i, row in df.iterrows()]
-    # df['prompt'] = prompt_column
-    # data = Dataset.from_pandas(df)
-
     torch.cuda.empty_cache()
 
     prompt_prefix = "Act as a professional psychologist and give a psychological breakdown for the text in backticks. This text is a person acting for advice on a mental health forum, hence do not misinterpret their questioning nature as being existential or suicidal and do not be overly sensistive to the same. Include the main theme involved, any sub themes, predominant emotion, any other emotions expressed, positive emotions if any, severity of negative emotion, any risk of suicide or self harm ONLY IF IT IS VERY VERY CLEARLY STATED IN THE TEXT, diagnosis of a mental health syndrome if any, and any environmental stressors if present. Take very special care not to overestimate the risk of suicide and self harm, if you say that the person is suicidal, give very convincing reason for the same. Keep in mind that any of the above can be missing, report None in that case. Give reasons behind every conclusion that you make based on the text and your psychology knowledge. DO NOT be very oversensitive towards syndromes like depression, anxiety and suicide. Do not give any recommendations.```"
-
-    # prompt_prefix = "Act as a professional psychologist and give a psychological breakdown for the text in backticks. This text is a person acting for advice on a mental health forum, hence do not misinterpret their questioning nature as being existential or suicidal and do not be overly sensistive to the same. Include the main theme involved, predominant emotion, positive emotions if any, severity of negative emotion, any risk of suicide or self harm ONLY IF IT IS VERY VERY CLEARLY STATED IN THE TEXT DO NOT OVERESTIMATE THE RISK OF SELF HARM AND SUICIDE BECAUSE NOT EVERYONE IS SUICIDAL, diagnosis of mental health syndrome if any, environmental stressors if any present. Keep in mind that any of the above can be missing, report None in that case. DO NOT be very oversensitive towards syndromes like depression, anxiety and suicide. Do not give any recommendations.```"
-
-    row_number = 18
-    result = get_completion([prompt_prefix + df[col_to_use][row_number] + "```"], model=model, tokenizer=tokenizer)
-    print("Text:", result[0].split('```')[1])
-    print("Output:", result[0].split('```')[2])
-
-    df['Generated Diagnosis Summary'].iloc[row_number]
 
     import warnings
     warnings.filterwarnings("ignore")
@@ -321,8 +224,4 @@ if not pre_training:
 
     df['Predicted Diagnosis'] = diag_list
 
-
-
     df.to_csv('DataWithPredictions.csv', index=False, sep='|')
-
-

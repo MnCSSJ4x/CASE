@@ -23,6 +23,7 @@ from transformers import AutoTokenizer, RobertaForMaskedLM
 import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# ENTER data_path TO DATA FILE WITH CURRICULAR DATA
 data_path = "PATH TO DATA"
 # hf_token = "ENTER YOUR HUGGINGFACE TOKEN"
 
@@ -91,12 +92,9 @@ def set_seed(seed):
 
 set_seed(42)
 
-# # Self Supervised
-
 def get_ss_dataset(tokenizer, data):
     return SelfSupDataset(tokenizer = tokenizer, data = data)
 
-# data_path = './textbook-data'
 parquet_files = [f for f in os.listdir(data_path) if f.endswith('.parquet')]
 dataframes = []
 

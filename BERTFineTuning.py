@@ -26,10 +26,10 @@ from tqdm.auto import tqdm
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# SET data_path TO FINETUNING DATASET
 data_path = "PATH TO DATA"
+# SET you HF TOKEN TO PUSH MODEL TO HUB
 hf_token = "ENTER YOUR HUGGINGFACE TOKEN"
-
-# ### Preprocessing
 
 def expand_contractions(sentence):
     contractions_expanded = [contractions.fix(word) for word in sentence.split()]
@@ -90,8 +90,6 @@ class ClassificationDataset(Dataset):
                 self.targets.append(1)
             else:
                 self.targets.append(0)
-        #       self.targets.append(1 if target is True else 0)
-            # self.targets.append(tokenized_targets)
 
 df_class = pd.read_csv(data_path)
 
@@ -164,7 +162,6 @@ def process_and_evaluate(
 
             outputs = model(input_ids=batch['source_ids'],attention_mask=batch['source_mask'],labels=batch['target'])
             loss = outputs.loss
-            #CAREFUL: Remove sum for single GPU 
             loss.backward()
 
             optimizer.step()
@@ -176,7 +173,6 @@ def process_and_evaluate(
         if sanity_check == True:
             break
             
-#     model.module.save_pretrained("CASE_BERT" + column)
     
     model.eval()
     y_true = []
@@ -207,11 +203,10 @@ def process_and_evaluate(
         "accuracy": accuracy,
     })
     
-
+# COLUMNS TO PROCESS AND EVALUATE
 good_cols = ['Anxiety', 'Depression']
 
 arr = []
-# for i in range(10,151,10):
 base_dir = 'PATH TO FINE TUNED MODEL'
 tokenizer_dir = 'bert-base-uncased'
 print('-'*100)

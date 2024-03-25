@@ -5,8 +5,10 @@ import pandas as pd
 from BARTScore.SUM.bart_score import BARTScorer
 
 device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
+# SET data_path TO THE FILE WITH GENERATED DIAGNOSIS AND THE REFERENCE DIAGNOSIS
 data_path = "PATH TO DATA"
 
+# FOR EVALUATION
 model_name = "roberta-large"
 bart_model_name = 'facebook/bart-large-cnn'
 
