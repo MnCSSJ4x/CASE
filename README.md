@@ -1,6 +1,6 @@
 # CASE: Efficient Curricular Data Pre-training for Building Assistive Psychology Expert Models
 
-This repository contains the code and data for the paper "CASE: Efficient Curricular Data Pre-training for Building Assistive Psychology Expert Models" presented at EMNLP2024.
+This repository contains the code and data for the paper "CASE: Efficient Curricular Data Pre-training for Building Assistive Psychology Expert Models" presented at EMNLP2024. The paper can be found [here](https://arxiv.org/abs/2406.00314)
 
 ## Authors
 
