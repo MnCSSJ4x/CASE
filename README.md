@@ -24,4 +24,4 @@ The limited availability of psychologists necessitates efficient identification 
 
 ## Model Weights
 
-The model weights can be found on [Hugging Face 🤗](https://huggingface.co/sarthakharne/bert-base-60-ep-pretrain-on-textbooks).
+The model weights can be found on [Hugging Face 🤗](https://huggingface.co/sarthakharne/bert-base-pretrain-on-textbooks).
