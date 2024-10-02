@@ -25,3 +25,8 @@ The limited availability of psychologists necessitates efficient identification 
 ## Model Weights
 
 The model weights can be found on [Hugging Face 🤗](https://huggingface.co/sarthakharne/bert-base-pretrain-on-textbooks).
+
+
+## License
+
+CASE: Efficient Curricular Data Pre-training for Building Assistive Psychology Expert Models &copy; 2024 by Sarthak Harne, Monjoy Narayan Choudhury, Madhav Rao, TK Srikanth, Seema Mehrotra, Apoorva Vashisht, Aarushi Basu, Manjit Sodhi is licensed under Creative Commons Attribution 4.0 International. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/
